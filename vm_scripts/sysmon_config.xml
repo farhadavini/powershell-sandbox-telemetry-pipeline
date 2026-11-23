@@ -1,0 +1,134 @@
+﻿<Sysmon schemaversion="4.90">
+  <!--
+    Sysmon-Konfiguration fuer die PowerShell-Sandbox.
+
+    Ziel ist eine moeglichst vollstaendige Verhaltenssicht in einer sauberen,
+    kurzlebigen Analyse-VM. Die VM wird vor jeder Probe auf einen sauberen
+    Snapshot zurueckgesetzt, deshalb ist der Grundrausch-Pegel niedrig und die
+    Erfassung bewusst breit angelegt. Erfasst werden genau die Event-Typen, die
+    der Collector (collectors.py) und die Verhaltensaggregation (utils.py)
+    auswerten:
+
+      1  ProcessCreate         3  NetworkConnect     5  ProcessTerminate
+      7  ImageLoad (gezielt)   8  CreateRemoteThread 10 ProcessAccess (gezielt)
+      11 FileCreate            12-14 RegistryEvent   15 FileCreateStreamHash
+      22 DnsQuery              23/26 FileDelete
+
+    Filterphilosophie nach SwiftOnSecurity/Olaf Hartong: fuer rauscharme
+    Event-Typen "include all", fuer rauschstarke (ImageLoad, ProcessAccess)
+    gezielte Includes auf sicherheitsrelevante Ziele.
+  -->
+  <HashAlgorithms>sha256,IMPHASH</HashAlgorithms>
+  <DnsLookup>False</DnsLookup>
+
+  <EventFiltering>
+
+    <!-- 1 ProcessCreate: alle Prozessstarts (Kind-Prozesse, LOLBins). -->
+    <ProcessCreate onmatch="exclude"/>
+
+    <!-- 5 ProcessTerminate: vollstaendig. -->
+    <ProcessTerminate onmatch="exclude"/>
+
+    <!-- 3 NetworkConnect: alle ausgehenden Verbindungen. -->
+    <NetworkConnect onmatch="exclude"/>
+
+    <!-- 22 DnsQuery: alle Namensaufloesungen (DGA-/C2-Erkennung). -->
+    <DnsQuery onmatch="exclude"/>
+
+    <!-- 11 FileCreate: alle Dateierstellungen; nur reiner Log-Muell ausgeschlossen. -->
+    <FileCreate onmatch="exclude">
+      <TargetFilename condition="end with">.etl</TargetFilename>
+      <TargetFilename condition="contains">\Windows\Prefetch\</TargetFilename>
+    </FileCreate>
+
+    <!-- 15 FileCreateStreamHash: Alternate Data Streams / heruntergeladene Dateien
+         mit Mark-of-the-Web (Zone.Identifier). -->
+    <FileCreateStreamHash onmatch="include">
+      <TargetFilename condition="end with">.ps1</TargetFilename>
+      <TargetFilename condition="end with">.psm1</TargetFilename>
+      <TargetFilename condition="end with">.exe</TargetFilename>
+      <TargetFilename condition="end with">.dll</TargetFilename>
+      <TargetFilename condition="end with">.bat</TargetFilename>
+      <TargetFilename condition="end with">.cmd</TargetFilename>
+      <TargetFilename condition="end with">.vbs</TargetFilename>
+      <TargetFilename condition="end with">.hta</TargetFilename>
+      <TargetFilename condition="end with">.scr</TargetFilename>
+      <TargetFilename condition="end with">.lnk</TargetFilename>
+    </FileCreateStreamHash>
+
+    <!-- 23/26 FileDelete: Loeschen von Skripten/Binaries (Selbstloeschung, Cleanup).
+         Nur relevante Endungen, um den Archiv-Umfang klein zu halten. -->
+    <FileDelete onmatch="include">
+      <TargetFilename condition="end with">.ps1</TargetFilename>
+      <TargetFilename condition="end with">.psm1</TargetFilename>
+      <TargetFilename condition="end with">.exe</TargetFilename>
+      <TargetFilename condition="end with">.dll</TargetFilename>
+      <TargetFilename condition="end with">.bat</TargetFilename>
+      <TargetFilename condition="end with">.cmd</TargetFilename>
+      <TargetFilename condition="end with">.vbs</TargetFilename>
+      <TargetFilename condition="end with">.hta</TargetFilename>
+      <TargetFilename condition="end with">.scr</TargetFilename>
+      <TargetFilename condition="end with">.tmp</TargetFilename>
+    </FileDelete>
+
+    <!-- 8 CreateRemoteThread: jede Thread-Injektion in Fremdprozesse. -->
+    <CreateRemoteThread onmatch="exclude"/>
+
+    <!-- 10 ProcessAccess: gezielt auf Credential-Access- und Injektions-Ziele,
+         da dieser Event-Typ sonst extrem rauscht. -->
+    <ProcessAccess onmatch="include">
+      <TargetImage condition="end with">lsass.exe</TargetImage>
+      <TargetImage condition="end with">csrss.exe</TargetImage>
+      <TargetImage condition="end with">winlogon.exe</TargetImage>
+      <TargetImage condition="end with">explorer.exe</TargetImage>
+      <TargetImage condition="end with">powershell.exe</TargetImage>
+      <TargetImage condition="end with">pwsh.exe</TargetImage>
+    </ProcessAccess>
+
+    <!-- 7 ImageLoad: nur sicherheitsrelevante Module (In-Memory-.NET, AMSI,
+         Credential-APIs, haeufig fuer Reflection/Injektion missbrauchte DLLs). -->
+    <ImageLoad onmatch="include">
+      <ImageLoaded condition="end with">amsi.dll</ImageLoaded>
+      <ImageLoaded condition="end with">clr.dll</ImageLoaded>
+      <ImageLoaded condition="end with">clrjit.dll</ImageLoaded>
+      <ImageLoaded condition="end with">mscoree.dll</ImageLoaded>
+      <ImageLoaded condition="end with">mscorlib.dll</ImageLoaded>
+      <ImageLoaded condition="contains">System.Management.Automation</ImageLoaded>
+      <ImageLoaded condition="end with">vaultcli.dll</ImageLoaded>
+      <ImageLoaded condition="end with">samlib.dll</ImageLoaded>
+      <ImageLoaded condition="end with">ncrypt.dll</ImageLoaded>
+      <ImageLoaded condition="end with">wininet.dll</ImageLoaded>
+      <ImageLoaded condition="end with">winhttp.dll</ImageLoaded>
+      <ImageLoaded condition="end with">dbghelp.dll</ImageLoaded>
+      <ImageLoaded condition="end with">dbgcore.dll</ImageLoaded>
+    </ImageLoad>
+
+    <!-- 12-14 RegistryEvent: Persistenz, Dienste, Zertifikate und
+         netzwerkbezogene Schluessel (deckt die Kategorisierung in utils.py ab). -->
+    <RegistryEvent onmatch="include">
+      <TargetObject condition="contains">\CurrentVersion\Run</TargetObject>
+      <TargetObject condition="contains">\CurrentVersion\RunOnce</TargetObject>
+      <TargetObject condition="contains">\CurrentVersion\RunOnceEx</TargetObject>
+      <TargetObject condition="contains">\CurrentVersion\Explorer\Shell Folders</TargetObject>
+      <TargetObject condition="contains">\CurrentVersion\App Paths</TargetObject>
+      <TargetObject condition="contains">\CurrentVersion\Winlogon</TargetObject>
+      <TargetObject condition="contains">\Active Setup\Installed Components</TargetObject>
+      <TargetObject condition="contains">\Microsoft\Windows\CurrentVersion\RunServices</TargetObject>
+      <TargetObject condition="contains">\Services\</TargetObject>
+      <TargetObject condition="contains">\Startup</TargetObject>
+      <TargetObject condition="contains">\Start Menu</TargetObject>
+      <TargetObject condition="contains">\SystemCertificates\</TargetObject>
+      <TargetObject condition="contains">\Certificates\</TargetObject>
+      <TargetObject condition="contains">\Internet Settings\ZoneMap</TargetObject>
+      <TargetObject condition="contains">\Tcpip\Parameters</TargetObject>
+      <TargetObject condition="contains">\DNS\</TargetObject>
+      <TargetObject condition="contains">\Winsock</TargetObject>
+      <TargetObject condition="contains">\Policies\Microsoft\Windows Defender</TargetObject>
+    </RegistryEvent>
+
+    <!-- 19-21 WmiEvent: WMI-basierte Persistenz (EventFilter/Consumer/Binding),
+         ein klassischer fileless-Mechanismus. -->
+    <WmiEvent onmatch="exclude"/>
+
+  </EventFiltering>
+</Sysmon>

@@ -1,0 +1,14 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+input/
+output/
+*.log
+*.ova
+*.zip
+
+# housekeeping
+.pytest_cache/
+.ruff_cache/
+.env

@@ -1,0 +1,22 @@
+{
+  "title": "PowerShell Sandbox Telemetry Pipeline",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "language": "eng",
+  "creators": [
+    {
+      "name": "Yaghoubi Avini, Farhad",
+      "affiliation": "Westfaelische Hochschule, Institute for Internet Security (if(is)), Gelsenkirchen, Germany"
+    }
+  ],
+  "description": "Collection pipeline that executes PowerShell scripts in a controlled Windows virtual machine and links per-sample static script information with Sysmon-based runtime telemetry, producing the training data used by the Fileless PowerShell Malware Detector. Developed for the master's thesis 'Runtime-Based Detection of PowerShell-Based Fileless Malware Using Deep Learning: A Systematic Architecture Comparison'.",
+  "keywords": [
+    "PowerShell",
+    "Sysmon",
+    "sandbox",
+    "malware telemetry",
+    "dynamic analysis",
+    "dataset generation"
+  ]
+}
