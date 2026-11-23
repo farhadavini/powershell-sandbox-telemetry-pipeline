@@ -1,6 +1,6 @@
 # PowerShell Sandbox Telemetry Pipeline
 
-![CI](../../actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![CI](../../actions/workflows/ci.yml/badge.svg) ![Code: MIT](https://img.shields.io/badge/Code-MIT-yellow.svg) ![Docs: CC BY 4.0](https://img.shields.io/badge/Docs-CC%20BY%204.0-lightgrey.svg)
 
 Automated dynamic-analysis pipeline that executes PowerShell scripts inside an
 isolated VirtualBox Windows VM, records their behaviour with **Sysmon** and turns
@@ -269,3 +269,9 @@ the label is assigned by the input set.
   NAT, live samples can reach real infrastructure; isolate or monitor the
   network accordingly and follow your organisation's malware-handling rules.
 - No malware samples are included in this repository.
+
+## License
+
+- **Code:** MIT, see [LICENSE](LICENSE).
+- **Documentation** (this README and `docs/`): [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), see [LICENSE-docs](LICENSE-docs).
+  Reuse is welcome with attribution: *Farhad Yaghoubi Avini, https://farhadavini.com*.
