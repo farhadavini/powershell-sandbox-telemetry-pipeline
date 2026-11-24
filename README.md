@@ -2,6 +2,8 @@
 
 ![CI](../../actions/workflows/ci.yml/badge.svg) ![Code: MIT](https://img.shields.io/badge/Code-MIT-yellow.svg) ![Docs: CC BY 4.0](https://img.shields.io/badge/Docs-CC%20BY%204.0-lightgrey.svg)
 
+**Project page:** [farhadavini.com/projects/powershell-sandbox-telemetry-pipeline](https://farhadavini.com/projects/powershell-sandbox-telemetry-pipeline/) · **Author:** [Farhad Yaghoubi Avini](https://farhadavini.com)
+
 Automated dynamic-analysis pipeline that executes PowerShell scripts inside an
 isolated VirtualBox Windows VM, records their behaviour with **Sysmon** and turns
 each run into one machine-learning-ready JSONL sample that combines static
