@@ -2,5 +2,5 @@ pywinrm==0.4.3
 orjson==3.10.12
 psutil==6.1.1
 numpy==1.26.4
-requests==2.32.3
+requests==2.33.0
 urllib3==2.2.3
